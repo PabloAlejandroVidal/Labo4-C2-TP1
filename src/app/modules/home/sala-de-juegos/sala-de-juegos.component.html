@@ -1,0 +1,13 @@
+<div class="home">
+
+  <div class="user-container">
+    <app-user-panel (btnClicked)="handleEvent($event)"></app-user-panel>
+  </div>
+
+  <div class="games-container">
+    <app-chat [hidden]="!chatVisible"></app-chat>
+    <router-outlet *ngIf="!chatVisible"></router-outlet>
+
+  </div>
+
+</div>

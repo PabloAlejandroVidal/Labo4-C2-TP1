@@ -1,0 +1,30 @@
+<h3 class="title">Registrate</h3>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-register" >
+
+  <div class="form-register__row">
+    <label class="form-register__label" for="email">Email</label>
+    <input class="form-register__input" name="email" id="email" type="email" formControlName="email" />
+  </div>
+    <div class="form-register__row" *ngIf="form.controls['email']?.invalid && form.controls['email']?.touched">
+      El correo electrónico es requerido y debe tener un formato válido.
+  </div>
+  <div class="form-register__row">
+    <label class="form-register__label" for="password">Password</label>
+    <input class="form-register__input" name="password" id="password" type="password" formControlName="password" />
+  </div>
+    <div *ngIf="form.controls['password']?.invalid && form.controls['password']?.touched">
+      La contraseña es requerida
+  </div>
+  <div class="form-register__row">
+    <button type="submit" class="form-register__button btn btn-design btn-design-form" [disabled]="form.invalid">Registrar Usuario</button>
+  </div>
+
+
+
+@if (msgResult) {
+  <div>
+    <p>{{msgResult}}</p>
+  </div>
+}
+</form>
