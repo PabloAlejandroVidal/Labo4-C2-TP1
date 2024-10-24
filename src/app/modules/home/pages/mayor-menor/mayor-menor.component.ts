@@ -50,21 +50,18 @@ export class MayorMenorComponent {
 
 
   ngOnInit(): void {
-    this.user = this.userService.lastUser;
+    this.user = this.userService.currentUser;
     const subscription: Subscription = this.gameService.observeScore(this.user, gameNames.mayorMenor).subscribe((docScore)=>{
       this.anteriorRecord = docScore.score;
     })
     this.subscriptions.push(subscription);
-
-    this.mazo = this.generarMazo();
-    this.cartaActual = this.obtenerCarta();
   }
 
   public readonly menuOptions = {
     init: {
       label: 'Comenzar Juego',
       action: ()=> {
-        this.initGame();
+        this.startGame();
       }
     },
     resume: {
@@ -76,12 +73,13 @@ export class MayorMenorComponent {
     restart: {
       label: 'Nuevo Juego',
       action: ()=> {
-        this.restartGame();
+        this.startGame();
       }
     },
     goRanking: {
       label: 'Ranking',
       action: ()=>{
+        this.router.navigateByUrl('/ranking');
       }
     },
     goHelp: {
@@ -101,12 +99,12 @@ export class MayorMenorComponent {
   pauseMenuItems = [this.menuOptions.resume, this.menuOptions.goRanking, this.menuOptions.goHelp, this.menuOptions.exit];
   gameOverMenuItems = [this.menuOptions.restart, this.menuOptions.goRanking, this.menuOptions.goHelp, this.menuOptions.exit];
 
-  initGame() {
+  startGame() {
     this.gameState = gameStates.playing;
-  }
-
-  restartGame() {
-    this.gameState = gameStates.playing;
+    this.mazo = this.generarMazo();
+    this.cartaActual = this.obtenerCarta();
+    this.puntaje = 0;
+    this.recordActual = 0;
   }
 
   pause(shouldPause: boolean) {

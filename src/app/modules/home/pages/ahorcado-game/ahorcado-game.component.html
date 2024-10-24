@@ -2,7 +2,8 @@
   <ng-container *ngIf="(gameState !== gameStates.notStarted); else mainMenu">
 
     <div class="info-container" (click)="pause(true)">
-
+      <!-- <div class="info-display">
+      </div> -->
       <div class="info-display">
         <div>Vidas Restantes: {{vidasRestantes}}</div>
         <div>Letras Sin Completar: {{letrasRestantes}}</div>

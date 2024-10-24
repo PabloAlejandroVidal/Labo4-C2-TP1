@@ -19,13 +19,12 @@ export class RegisterComponent {
   private router = inject(Router);
   private userService = inject(UserService)
 
-
   async ngOnInit(){
     this.form = new FormGroup({
-      email: new FormControl("", [Validators.email, Validators.required]),
+      email: new FormControl("", [Validators.minLength(8), Validators.email, Validators.required]),
       password: new FormControl("", [Validators.minLength(6), Validators.required]),
     });
-}
+  }
 
   async onSubmit() {
     if(!this.form.valid){

@@ -101,6 +101,7 @@ export class AuthService {
       return authResult;
 
     } catch (error: any) {
+      console.log(error)
       authResult.success = false;
       switch (error.code) {
         case 'auth/invalid-credential':
@@ -150,14 +151,27 @@ export class AuthService {
     }
   }
 
+  isLoguedUser() {
+    return (this.auth.currentUser?.email)? true : false;
+  }
 
   async logout(): Promise<AuthResult> {
     const authResult: AuthResult = AuthResultInit;
 
     try {
+      if (!this.isLoguedUser()){
+        authResult.success = false
+        authResult.authError = {
+          code: 'Error al cerrar sesión',
+          message: 'No hay sesión abierta para cerrar'
+        }
+        return authResult;
+      }
+
       await signOut(this.auth);
       authResult.success = true;
       authResult.user = this.auth.currentUser;
+      return authResult;
     }
     catch (error: any){
       authResult.success = false;
@@ -165,8 +179,6 @@ export class AuthService {
         code: 'Error inesperado',
         message: error.message,
       }
-    }
-    finally{
       return authResult;
     }
   }
@@ -175,50 +187,4 @@ export class AuthService {
     return user(this.auth);
   }
 
-  /*
-  private firestoreService: FirestoreService = inject(FirestoreService);
-  private auth: Auth = inject(Auth);
-  public user$ = user(this.auth);
-
-  isLogued() {
-    return this.auth.currentUser;
-  }
-
-  async register(authData: AuthData) {
-    const {email, password} = authData;
-
-    if(await this.firestoreService.userExists(email)){
-      throw new Error('el usuario ya se encuentra registrado');
-    }else{
-
-      return createUserWithEmailAndPassword(this.auth, email, password)
-      .then((res)=>{
-        if( (res.user.email !== null) ){
-          return this.firestoreService.registerUser(authData)
-          .then(()=>{
-            this.login(authData);
-            return 'usuario registrado exitosamente';
-          });
-        }
-        return 'no se pudo registrar el usuario';
-      })
-      .catch((error)=>{
-        console.log(error);
-      });
-    }
-  }
-
-  async login(authData: AuthData) {
-    const {email, password} = authData;
-    return signInWithEmailAndPassword(this.auth, email, password).then(res => res.user.email);
-  }
-
-
-  CloseSession(){
-  console.log(this.auth.currentUser)
-  signOut(this.auth).then(()=>{
-      console.log(this.auth.currentUser)
-    });
-  }
-   */
 }

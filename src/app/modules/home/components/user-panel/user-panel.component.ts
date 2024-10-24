@@ -1,6 +1,5 @@
 import { Component, EventEmitter, inject, Output } from '@angular/core';
 import { Router } from '@angular/router';
-import { DatePipe, NgClass } from '@angular/common';
 import { UserService } from 'app/shared/services/user/user.service';
 
 @Component({
@@ -16,7 +15,7 @@ export class UserPanelComponent {
   router: Router = inject(Router);
   user: string = '';
   numberOfLogins: number = 0;
-  lastAccess: Date | any = null;
+  lastAccess: Date | null = null;
 
 
   constructor(){
@@ -26,9 +25,9 @@ export class UserPanelComponent {
       this.userService.getNumberOfLogins(this.user).subscribe((logins)=>{
         this.numberOfLogins = logins
       })
-      this.userService.observeLastestLogin(this.user).subscribe((doc)=>{
-        const data: any = doc.data();
-        this.lastAccess = data['loginDate'].toDate();
+
+      this.userService.observeLastestLogin(this.user).subscribe((data)=>{
+        this.lastAccess = data?.loginDate.toDate() || null;
 
       })
     });
@@ -40,7 +39,6 @@ export class UserPanelComponent {
   }
 
   onClick() {
-    // Emitir un evento al padre cuando se hace clic en el botón
     this.btnStatus = !this.btnStatus;
     this.btnClicked.emit(this.btnStatus);
   }

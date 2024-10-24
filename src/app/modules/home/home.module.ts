@@ -21,6 +21,7 @@ import { ChatComponent } from "../../pages/chat/chat.component";
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ChatService } from 'app/shared/services/chat/chat.service';
 import { AppComponent } from 'app/app.component';
+import { TimerComponent } from './components/timer/timer.component';
 
 
 
@@ -46,6 +47,7 @@ import { AppComponent } from 'app/app.component';
     HomeRoutingModule,
     HttpClientModule,
     FormsModule,
+    TimerComponent,
 
 
   ],

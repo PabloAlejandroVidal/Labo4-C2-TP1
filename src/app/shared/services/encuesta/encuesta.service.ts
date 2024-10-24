@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { addDoc, collection, collectionData, CollectionReference, Firestore, limit, orderBy, query } from '@angular/fire/firestore';
+import { addDoc, collection, collectionData, CollectionReference, Firestore, limit, orderBy, query, Timestamp } from '@angular/fire/firestore';
 import { Encuesta } from 'app/shared/interfaces/encuesta';
 import { Observable } from 'rxjs';
 
@@ -18,6 +18,7 @@ export class EncuestaService {
 
   // Método para guardar una nueva encuesta
   async guardarEncuesta(survey: Encuesta): Promise<void> {
+    survey.createdAt = new Date();
     return addDoc(this.surveysCollection, survey).then(() => {
       console.log('Encuesta guardada correctamente');
     }).catch((error) => {

@@ -14,7 +14,7 @@ import { ActivatedRoute, IsActiveMatchOptions, Router } from '@angular/router';
 export class UserService {
 
   router: Router = inject(Router);
-  lastUser: string | null = null;
+  currentUser: string | null = null;
   firstLoad: boolean = true;
 
   constructor(
@@ -22,11 +22,25 @@ export class UserService {
     private firestoreService: FirestoreService
   ) {
     this.observeCurrentUser().subscribe((user)=>{
-      this.udateUserState(user);
-      this.redirect(user);
+      this.currentUser = user?.email || null;
     })
   }
 
+  async userHasRole(role: string): Promise<boolean>{
+    if(!this.currentUser){
+      return false;
+    }
+    const user = await this.firestoreService.getUser(this.currentUser)
+    if (!user) {
+      return false;
+    }
+    const data = user.data();
+    if (data['role'] === role){
+      return true;
+    }else{
+      return false;
+    }
+  }
 
   async registerUser(authData: AuthData): Promise<AuthResult> {
     const authResult: AuthResult = AuthResultInit;
@@ -40,6 +54,7 @@ export class UserService {
         }
         return authResult;
       }
+      await this.firestoreService.registerUser(authData.email);
       return await this.authService.register(authData.email, authData.password);
     }catch (error: any){
         authResult.success = false,
@@ -47,9 +62,7 @@ export class UserService {
           code: 'Error inesperado',
           message: error.message,
         }
-    }
-    finally{
-      return authResult;
+        return authResult;
     }
   }
 
@@ -57,25 +70,29 @@ export class UserService {
     const authResult: AuthResult = AuthResultInit;
     try {
       const userExists = await this.firestoreService.userExists(authData.email);
+
       if (!userExists) {
-        authResult.success = true;
+        authResult.success = false;
         authResult.authError = {
           code: 'Usuario no encontrado',
           message: 'No se pudo encontrar el usuario.',
         }
       }
+      console.log(authData.email);
+      console.log(authData.password);
       const authResultFromLogin = await this.authService.login(authData.email, authData.password);
       if (authResultFromLogin.success) {
-        this.firestoreService.registerLogin(authData.email);
+        await this.firestoreService.registerLogin(authData.email);
+        await this.firestoreService.updateUserStatus(authData.email, true);
+        this.router.navigateByUrl('home');
       }
+      return authResultFromLogin;
     } catch (error: any) {
       authResult.success = false;
       authResult.authError = {
         code: 'Error inesperado',
         message: error.message,
       }
-    }
-    finally{
       return authResult;
     }
   }
@@ -83,56 +100,27 @@ export class UserService {
   async logOutUser(): Promise<AuthResult> {
     const authResult: AuthResult = AuthResultInit;
     try {
-      return this.authService.logout();
+      const user = this.currentUser;
+      const logOutResult = await this.authService.logout();
+      if (user && logOutResult.success) {
+        this.router.navigateByUrl('auth');
+        this.firestoreService.updateUserStatus(user, false);
+      }
+      return logOutResult;
     }
     catch (error: any) {
       authResult.authError = {
         code: 'Error inesperado',
         message: error.message,
       }
-    }
-    finally{
+      this.router.navigateByUrl('auth');
       return authResult;
     }
   }
 
 
-  private udateUserState(user: User | null) {
-    if (user?.email){
-      this.lastUser = user?.email;
-      this.firestoreService.updateUserStatus(this.lastUser, true);
-    }
-    else{
-      (this.lastUser && this.firestoreService.updateUserStatus(this.lastUser, false));
-    }
-
-  }
-
-  private match: IsActiveMatchOptions = {
-    paths: 'subset',
-    matrixParams: 'ignored',
-    queryParams: 'ignored',
-    fragment: 'ignored'
-  }
-
-  private redirect(user: User | null){
-    if(!this.firstLoad){
-
-      if (user?.email){
-        this.router.navigateByUrl('home');
-      }else{
-        this.router.navigateByUrl('auth');
-      }
-    }else{
-      this.firstLoad = false;
-    }
-  }
-
-
   observeCurrentUser(): Observable<User | null> {
-    return this.authService.user$.pipe(
-      map(user => { return user })
-    );
+    return this.authService.user$;
   }
 
   getNumberOfLogins(email: string): Observable<any> {

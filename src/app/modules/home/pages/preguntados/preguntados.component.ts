@@ -48,12 +48,13 @@ export class PreguntadosComponent {
     restart: {
       label: 'Nuevo Juego',
       action: ()=> {
-        this.restartGame();
+        this.startGame();
       }
     },
     goRanking: {
       label: 'Ranking',
       action: ()=>{
+        this.router.navigateByUrl('/ranking');
       }
     },
     goHelp: {
@@ -74,7 +75,7 @@ export class PreguntadosComponent {
   gameOverMenuItems = [this.menuOptions.restart, this.menuOptions.goRanking, this.menuOptions.goHelp, this.menuOptions.exit];
 
   ngOnInit(): void {
-    this.user = this.userService.lastUser;
+    this.user = this.userService.currentUser;
     const subscription: Subscription = this.gameService.observeScore(this.user, gameNames.preguntados).subscribe((docScore)=>{
       this.record = docScore.score;
     })
@@ -87,19 +88,15 @@ export class PreguntadosComponent {
     .pipe(take(1))
     .subscribe((countries)=>{
       this.todosLosPaises = countries;
-      this.initGame();
     })
 
     this.subscriptions.push(subscription);
   }
 
-  initGame() {
-    //obtengo los 10 paises por los que se preguntara
+  startGame() {
+    this.paisesAdivinados = 0;
     const shuffledCountries = this.countryService.shuffleArray(this.todosLosPaises)
     this.paisesPorAdivinar = shuffledCountries.slice(0, 10);
-  }
-
-  startGame() {
     this.gameState = gameStates.playing;
     this.makeRiddle();
   }
@@ -107,7 +104,7 @@ export class PreguntadosComponent {
   makeRiddle() {
 
     this.paisAAdivinar = this.obtenerPaisParaAdvinar();
-    this.paisesParaOpciones = this.todosLosPaises.slice(0, 3);
+    this.paisesParaOpciones = this.obtenerOpciones(this.todosLosPaises, 3);
 
     if (!this.paisesParaOpciones.includes(this.paisAAdivinar)){
       this.paisesParaOpciones[0] = this.paisAAdivinar;
@@ -115,6 +112,14 @@ export class PreguntadosComponent {
   }
 
 
+  obtenerOpciones(from: any[], numero: number){
+    const opciones = [];
+    for (let i = 0; i < numero; i++){
+      const randomIndex = Math.floor(Math.random() * from.length);
+      opciones.push(from[randomIndex])
+    }
+    return opciones;
+  }
 
   obtenerPaisParaAdvinar(): Country {
     const randomIndex = Math.floor(Math.random() * this.paisesPorAdivinar.length);
@@ -144,19 +149,17 @@ export class PreguntadosComponent {
     if (this.paisesPorAdivinar.length === 0){
       Swal.fire(
         'Fin del Juego!',
-        `Has adivinado ${this.paisesAdivinados} de 10 paises`,
+        `Has acertado a ${this.paisesAdivinados} de 10 paises`,
         'info'
       );
       if (this.user && this.paisesAdivinados > this.record){
-        this.gameService.recordNewScore(this.user, gameNames.ahorcado, this.record);
+        const record = this.paisesAdivinados > this.record ? this.paisesAdivinados : this.record;
+        this.gameService.recordNewScore(this.user, gameNames.preguntados, record);
       }
+      this.gameState = gameStates.gameOver;
+      return;
     }
     this.makeRiddle();
-  }
-
-
-  restartGame() {
-    this.gameState = gameStates.playing;
   }
 
   pause(shouldPause: boolean) {

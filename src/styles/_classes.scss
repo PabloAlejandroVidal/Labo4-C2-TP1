@@ -19,6 +19,7 @@
 .btn:active{
   background-color: $play-btn-color-active;
 }
+
 .btn-design{
   position: relative;
   text-align: center;
@@ -29,7 +30,7 @@
   border-radius: .2em;
   padding: .2em;
   color: $play-btn-txt-color;
-  background-color: rgb(0, 0, 0);
+  background-color: $play-btn-color;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
@@ -37,14 +38,11 @@
   z-index: 1;
 }
 .btn-design:hover{
-  background-color: $play-btn-color-hover;
 }
 .btn-design:active{
-  background-color: $play-btn-color-active
 }
 .btn-design:before {
   content: "";
-  background-color: #282828;
   position: absolute;
   top: 0px;
   left: 0px;
@@ -78,10 +76,9 @@
   left: 0;
   top: 0;
   border-radius: .2em;
-  background-color: rgba(0, 0, 0, 0.2);
 }
 .btn-design:hover:after {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 .btn-design:active:after {
   background-color: rgba(0, 0, 0, 0.5);
@@ -311,15 +308,19 @@ animation: button-crazy 10s linear infinite;
   transform: rotate(-35deg) scaleX(.66);
 }
 
-.btn-design:disabled:before {
-  background: rgba(0, 0, 0, 0.3);
+.btn-design:disabled,
+.btn-design:disabled:active
+{
+  cursor: default;
   animation: none;
-}
-.btn-design:disabled {
-  background: black;
-  animation: none;
-}
-.btn-design:disabled:after {
-  background: rgba(0, 0, 0, 0.3);
-  animation: none;
+  &:after{
+    background: rgba(119, 119, 119, 0);
+    cursor: default;
+    animation: none;
+  }
+  &:before{
+    background: rgb(108, 108, 108);
+    cursor: default;
+    animation: none;
+  }
 }

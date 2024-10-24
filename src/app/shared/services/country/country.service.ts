@@ -20,7 +20,7 @@ export class CountryService {
   getAllCountries(): Observable<Country[]> {
     return this.http.get<any[]>(this.apiUrl).pipe(
       map((countries: any[]) => countries.map(country => ({
-        name: country.name.common,
+        name: country.translations.spa.common,
         flag: country.flags.png,
         continent: country.continents[0]
       })))

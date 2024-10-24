@@ -70,7 +70,7 @@ export class ChatComponent {
   }
 
   sendMessage(){
-    if (this.currentUser){
+    if (this.currentUser && this.textToSend.length > 0){
       this.chatService.sendGlobalMessage(this.currentUser, this.textToSend);
       this.textToSend = '';
     }

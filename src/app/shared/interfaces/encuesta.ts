@@ -1,14 +1,17 @@
-import { Timestamp } from "@angular/fire/firestore";
 
 export interface Encuesta {
   id?: string;
   name: string;
   age: number;
   phoneNumber: string;
-  questions: {
-    question1: boolean;
-    question2: string;
-    question3: string;
+  deportes: {
+    basquet: boolean,
+    futbol: boolean,
+    tenis: boolean,
+    voley: boolean,
+    otros: boolean,
   };
-  createdAt: Timestamp;
+  estacion: string;
+  pasatiempos: string;
+  createdAt: Date;
 }

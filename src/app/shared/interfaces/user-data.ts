@@ -1,5 +1,4 @@
 export interface UserData {
-  user: string,
   email: string,
   registrationDate: Date | null,
   isOnline: boolean,
@@ -9,7 +8,6 @@ export interface UserData {
 
 }
 export const userDataInit: UserData = {
-  user: '',
   email: '',
   registrationDate: null,
   isOnline: false,

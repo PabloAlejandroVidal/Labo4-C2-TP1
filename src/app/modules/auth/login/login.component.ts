@@ -25,18 +25,18 @@ export class LoginComponent {
 
 
 async ngOnInit(){
-    this.form = new FormGroup({
-      email: new FormControl("", [Validators.email, Validators.required]),
-      password: new FormControl("", [Validators.minLength(6), Validators.required]),
-    });
+  this.form = new FormGroup({
+    email: new FormControl("", [Validators.minLength(8), Validators.email, Validators.required]),
+    password: new FormControl("", [Validators.minLength(6), Validators.required]),
+  });
 }
 
   async onSubmit() {
     if(!this.form.valid){
-      this.msgResult = 'Error al iniciar sesión';
+      this.msgResult = 'Verifica los datos ingresados e intenta nuevamente';
       Swal.fire(
         '¡Error en el formulario!',
-        'Verifica los datos ingresados e intenta nuevamente.',
+        this.msgResult,
         'error'
       )
       return;
@@ -69,12 +69,11 @@ async ngOnInit(){
     }
   }
 
-
   loadUser(index: number) {
     const user = {
       email: this.users[index].email,
       password: this.users[index].password
     }
-    this.form.patchValue(user)
+    this.form.patchValue(user);
   }
 }

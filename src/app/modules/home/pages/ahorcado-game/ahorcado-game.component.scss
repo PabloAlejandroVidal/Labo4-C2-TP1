@@ -66,6 +66,10 @@
   border-radius: .5em;
   background-color: rgba(0, 0, 0, 0.5);
   color: rgb(249, 255, 163);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 .info-vidas{
   display: flex;

@@ -2,14 +2,19 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  align-items: stretch;
 }
 
 app-nav-bar {
   flex-shrink: 0; /* Evita que la barra de navegación se reduzca */
 }
 
-.router-content {
+.layout-router-content {
   flex-grow: 1; /* Hace que el contenido ocupe todo el espacio restante */
+  height: 100vh;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: baseline;
+  align-items: stretch;
 }

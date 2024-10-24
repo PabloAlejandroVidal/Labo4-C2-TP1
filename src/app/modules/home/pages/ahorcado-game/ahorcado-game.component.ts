@@ -1,8 +1,8 @@
 import { Component, inject, Input } from '@angular/core';
 import Swal from 'sweetalert2';
-import { GameService } from '../../services/game/game.service';
-import { routes } from 'app/app.routes';
-import { Router } from '@angular/router';
+import { gameNames, GameService } from '../../services/game/game.service';
+import { Route, Router } from '@angular/router';
+import { UserService } from 'app/shared/services/user/user.service';
 
 
 // Definir los estados del juego en un objeto
@@ -24,8 +24,10 @@ export class AhorcadoGameComponent {
   @Input() isMenuActive: boolean = false;
   router = inject(Router);
   gameService: GameService = inject(GameService);
+  userService: UserService =inject(UserService);
   gameStates = gameStates;
   gameState: GameState = gameStates.notStarted;
+  user = this.userService.currentUser;
 
   word: string[] = [];
   // writtenLetters: Set<string> = new Set();
@@ -70,12 +72,13 @@ export class AhorcadoGameComponent {
     goRanking: {
       label: 'Ranking',
       action: ()=>{
-
+        this.router.navigateByUrl('/ranking');
       }
     },
     goHelp: {
       label: 'Ayuda',
       action: ()=>{
+        console.log(this.word.join(''));
       }
     },
     exit: {
@@ -139,31 +142,33 @@ export class AhorcadoGameComponent {
 
     if (!this.word.includes(key)){
       this.marcarError();
+      this.comprobarSiPerdio() && this.user && this.gameService.recordAhorcadoScore(this.user, this.word.join(''), false);
     }else{
       this.agregarLetra(key);
+      this.comprobarSiGano() && this.user && this.gameService.recordAhorcadoScore(this.user, this.word.join(''), true);
     }
   }
-
 
   private marcarError() {
     this.errores++;
     this.vidasRestantes--;
-    this.comprobarSiPerdio();
   }
 
-  private comprobarSiPerdio() {
+  private comprobarSiPerdio() : boolean {
     if (this.vidasRestantes == 0){
+      Swal.fire(
+        'Fin del Juego!',
+        'Te has quedado sin vidas.',
+        'info'
+      );
       this.gameOver();
+      return true;
     }
+    return false;
   }
 
   private gameOver() {
     this.gameState = gameStates.gameOver;
-    Swal.fire(
-      'Fin del Juego!',
-      'Te has quedado sin vidas.',
-      'info'
-    )
   }
 
   private agregarLetra(key: string) {
@@ -173,13 +178,19 @@ export class AhorcadoGameComponent {
         this.letrasRestantes--;
       }
     })
-    this.comprobarSiGano();
   }
 
-  private comprobarSiGano() {
+  private comprobarSiGano() : boolean {
     if(this.letrasRestantes == 0){
+      Swal.fire(
+        'Fin del Juego!',
+        'Has encontrado la palabra.',
+        'success'
+      );
       this.gameOver();
+      return true;
     }
+    return false;
   }
 
   pause(shouldPause: boolean) {

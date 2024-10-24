@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import Swal from 'sweetalert2';
+import { gameNames, GameService } from '../../services/game/game.service';
+import { UserService } from 'app/shared/services/user/user.service';
 
 
 interface slot {
@@ -28,6 +30,9 @@ export class ConectaCuatroComponent {
   board: column[] = [];
   currentTurn: 'Rojo' | 'Amarillo' = 'Rojo';
   winner: string | null = null;
+  gameService: GameService = inject(GameService);
+  userService: UserService = inject(UserService);
+  user = this.userService.currentUser;
 
   constructor() {
     this.resetGame();
@@ -78,6 +83,9 @@ export class ConectaCuatroComponent {
           `El ganador es el color: ${this.winner}`,
           'success'
         )
+        if (this.user){
+          this.gameService.recordConectaCuatroScore(this.user, this.winner.toLowerCase());
+        }
       } else {
         this.switchTurn();
       }

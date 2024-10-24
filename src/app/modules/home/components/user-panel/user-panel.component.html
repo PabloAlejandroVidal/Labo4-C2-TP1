@@ -13,7 +13,7 @@
 
   <div class="container">
     <p>
-      Último Acceso: {{lastAccess | date:'dd/MM/yyyy, h:mm a' }}
+      Último Acceso: {{(lastAccess? (lastAccess | date:'dd/MM/yyyy, h:mm a'): 'Calculando...' )}}
     </p>
   </div>
   <div class="container right">

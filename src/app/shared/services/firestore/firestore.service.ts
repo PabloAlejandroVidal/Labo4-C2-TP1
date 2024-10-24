@@ -3,30 +3,29 @@ import { LoginData, loginDataInit } from '../../interfaces/login-data';
 import { CollectionReference, addDoc, collection, collectionData, getDoc, getDocs, onSnapshot, query, runTransaction, where, updateDoc, QuerySnapshot, DocumentReference, QueryDocumentSnapshot, limit } from '@angular/fire/firestore';
 import { DocumentData, Firestore, doc} from '@angular/fire/firestore';
 import { UserData, userDataInit } from '../../interfaces/user-data';
-import { filter, from, map, Observable, of, pipe, reduce, switchMap } from 'rxjs';
+import { EMPTY, filter, from, map, Observable, of, pipe, reduce, switchMap } from 'rxjs';
 import { DocumentSnapshot, orderBy } from 'firebase/firestore';
 import { Timestamp } from '@angular/fire/firestore';
 
 
+export interface Login {
+  loginDate: Timestamp,
+  user: string
+}
+
 @Injectable({
   providedIn: 'root'
 })
-
 export class FirestoreService {
 
   private firestore: Firestore = inject(Firestore);
 
 
   private usersCollection = collection(this.firestore, 'users');
-  private loginsCollection = collection(this.firestore, 'logins');
-
-  private allUsersQuery = query(this.usersCollection);
   private onlineUsersQuery = query(this.usersCollection, where('isOnline', '==', true));
 
   private getUserByEmailQuery = (email: string)=>{return query(this.usersCollection, where('email', '==', email));}
-
   private getLoginsCollectionByUserDocRef = (userDocRef: DocumentReference)=>{return collection(userDocRef, 'logins')}
-
 
   async getUserDocs(email: string) {
     const usuariosConEmailIngresado = query(this.usersCollection, where('email', '==', email));
@@ -44,85 +43,6 @@ export class FirestoreService {
     }
   }
 
-  async scheduleChat(user1Doc: QueryDocumentSnapshot<DocumentData, DocumentData>,
-    user2Doc: QueryDocumentSnapshot<DocumentData, DocumentData>,
-    docId: string){
-
-      //actualizo la agenda de los usuarios con el nuevo chat
-   updateDoc(user1Doc.ref, {chats: {[user2Doc.id]: docId }});
-   updateDoc(user2Doc.ref, {chats: {[user1Doc.id]: docId }});
- }
-
-  async createChat(userFrom: any, userTo: any){
-    //determino quien es el usuario 1 y 2 por orden alfabetico
-    const userRef1 = userFrom.id < userTo.id ? userFrom.id : userTo.id;
-    const userRef2 = userRef1 != userFrom.id ? userFrom.id : userTo.id;
-
-    const chatsCollection = collection(this.firestore, 'chats');
-
-    //agrego un nuevo documento chat con las referencias a los usuarios
-    return addDoc(chatsCollection, {userRef1, userRef2})
-    .then((chat)=>{
-      //agendo la referencia al chat para cada uno de los usuarios
-      this.scheduleChat(userFrom, userTo, chat.id);
-      return chat;
-    })
-  }
-
-  async getChatReference(userFrom:  DocumentSnapshot<DocumentData, DocumentData>, userTo:  DocumentSnapshot<DocumentData, DocumentData>){
-    //busco la referencia al chat en la agenda de cualquiera de los dos usuarios, si no existe creo el chat
-    //
-    //podria actualizarse la funcion para que revise en ambas agendas, pero si no se altero la base de datos deberia ser consistente y existir el mismo chat para ambos
-    const userData = userFrom.data() as any;
-    const idTo = userTo.id;
-    const chatPathReference = userData['chats'][idTo] || await this.createChat(userFrom, userTo);
-
-    return chatPathReference;
-  }
-
-  async sendMessage(userFrom:  DocumentSnapshot<DocumentData, DocumentData>, userTo:  DocumentSnapshot<DocumentData, DocumentData>, chatDocRef : any, text: string){
-    //agrego el mensaje a la collecion de mensajes (chat) de ambos usuarios
-
-    const usersCollection = collection(chatDocRef, 'messages');
-    const message = {
-      text,
-      sent: new Date(),
-      from: userFrom.ref,
-      to: userTo.ref,
-    }
-
-    addDoc(usersCollection, message)
-    .then((doc)=>{
-    });
-  }
-
-  async getChat(userFrom: QueryDocumentSnapshot<DocumentData, DocumentData>, userTo: QueryDocumentSnapshot<DocumentData, DocumentData>) {
-    //carga la lista de mensajes para que puedan ser leidos por el usuario
-
-    const docUser = await getDoc(userFrom.ref);
-    const userData = docUser.data() as any;
-    const chatRef = userData['chats'][userTo.ref.id] || this.createChat(userFrom, userTo);
-
-
-    const referenciaAlChat = doc(this.firestore, 'chats', chatRef);
-
-    const chatMessages = collection(referenciaAlChat, 'messages');
-    const ordererMessages = query(chatMessages, orderBy('sent'));
-
-    return new Observable<[]>((observer) => {
-      const unsubscribe = onSnapshot(ordererMessages, (querySnapshot) => {
-        const messages: any = [];
-        querySnapshot.forEach((doc) => {
-          messages.push(doc.data());
-        });
-        observer.next(messages);
-      });
-
-      return () => unsubscribe();
-    });
-
-  }
-
   getUsersOnline(): Observable<UserData[]> {
     return collectionData(this.onlineUsersQuery, { idField: 'id' }) as Observable<UserData[]>;
   }
@@ -138,9 +58,12 @@ export class FirestoreService {
   }
 
   async updateUserStatus(email: string, status: boolean) {
-    const currentUser = await this.getUser(email);
-    if (currentUser?.ref != null){
-      const userRef = currentUser.ref;
+    if(!email){
+      return;
+    }
+    const queryDocumentSnapshot = await this.getUser(email);
+    if (queryDocumentSnapshot?.ref != null){
+      const userRef = queryDocumentSnapshot.ref;
 
       await runTransaction(this.firestore, async (transaction) => {
         // Ejecuta una transacción
@@ -171,17 +94,16 @@ export class FirestoreService {
     const userData: UserData = userDataInit;
     userData.email = email;
     userData.registrationDate = new Date();
-
-    addDoc(this.usersCollection, userData);
+    await addDoc(this.usersCollection, userData);
   }
 
-  registerLogin(email: string) {
+  async registerLogin(email: string) {
 
     const loginData: LoginData = loginDataInit;
     loginData.loginDate = new Date();
     loginData.user = email;
 
-    getDocs(this.getUserByEmailQuery(email)).then((querySnapShot)=>{
+    await getDocs(this.getUserByEmailQuery(email)).then((querySnapShot)=>{
 
       querySnapShot.forEach((documentSnapshot)=>{
         const userDocRef = doc(this.firestore, `users/${documentSnapshot.id}`);
@@ -194,12 +116,12 @@ export class FirestoreService {
   }
 
 // Función que obtiene la referencia de los logins del usuario por email
-observeLoginsRef(email: string): Observable<CollectionReference<DocumentData, DocumentData>> {
+observeLoginsRef(email: string): Observable<CollectionReference<DocumentData, DocumentData> | null> {
   return from(getDocs(this.getUserByEmailQuery(email))).pipe(
-    filter((querySnapShot)=>{
-      return !querySnapShot.empty;
-    }),
     map((querySnapshot) => {
+      if (querySnapshot.empty){
+        return null;
+      }
       const userDoc = querySnapshot.docs[0];
       return this.getLoginsCollectionByUserDocRef(userDoc.ref);
     })
@@ -216,13 +138,15 @@ observeRecentLogins(email: string, date: Date): Observable<any> {
 }
 
 // Obtener el último login como un Observable
-observeLatestLogin(email: string): Observable<DocumentSnapshot> {
+observeLatestLogin(email: string): Observable<Login | null> {
   return this.observeLoginsRef(email).pipe(
     switchMap((loginsRef) => {
+      if (!loginsRef){
+        return of(null)
+      }
       const latestLoginsQuery = query(loginsRef, orderBy('loginDate', 'desc'), limit(1));
       return from(getDocs(latestLoginsQuery)).pipe(
-        filter(value => value !== null && value !== undefined),
-        map((snapshot) => snapshot.docs[0])
+        map((querySnap)=> !querySnap.empty ? querySnap.docs[0].data() as Login : null)
       );
     })
   );
@@ -260,32 +184,4 @@ observeLatestLogin(email: string): Observable<DocumentSnapshot> {
   getNumberOfLogins(email: string): Observable<number> {
     return this.getLogins(email).pipe(map((docs)=>{return docs.length}))
   }
-
-
-
-/*   registerLogin2(email: string) {
-    const loginData: LoginData = loginDataInit;
-    loginData.fechaInicio = new Date();
-    loginData.usuario = email;
-
-    addDoc(this.loginsCollection, loginData).then((r)=>{
-    }).catch((e)=>{
-    })
-  } */
-
-/*   getNumberOfLogins(email: string): Observable<number> {
-    const loginsCollection = collection(this.firestore, 'logins');
-    const usuariosOnlineQuery = query(loginsCollection, where('usuario', '==', email));
-
-    return new Observable<number>((observer) => {
-      const unsubscribe = onSnapshot(usuariosOnlineQuery, (query) => {
-
-        observer.next(query.size);
-      });
-
-      return () => unsubscribe();
-    });
-  } */
-
-
 }
